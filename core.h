@@ -33,6 +33,10 @@ ubyte* program_start_in_core(core* c) {
   return &(c->ram[PROGRAM_START_OFFSET]);
 }
 
+// More Significant Nibble and Less Significant Nibble
+#define more_significant_nibble_of(u) (((u) >> 4) & 0xF)
+#define less_significant_nibble_of(u) ((u) & 0xF)
+
 void initialize_core(core* cpu) {
   cpu->PC = PROGRAM_START_OFFSET;
 }
@@ -52,95 +56,95 @@ void tick(core* cpu, graphics* gpu) {
     cpu->PC = cpu->stack[cpu->SP];
     // We store the PC from call which gets incremented to the
     // correct value at the end of tick.
-  } else if (((msb >> 4) & 0xF) == 0) {
+  } else if (more_significant_nibble_of(msb) == 0) {
     // SYS - jump to a routine, deprecated
-  } else if (((msb >> 4) & 0xF) == 1) {
+  } else if (more_significant_nibble_of(msb) == 1) {
     // JP - jump to a routine
-    cpu->PC = ((msb & 0x0F) << 8) + (lsb & 0xFF);
+    cpu->PC = (less_significant_nibble_of(msb) << 8) + (lsb & 0xFF);
     // Since we increment at the end of tick, we decrement here.
     cpu->PC -= sizeof(instruction);    
-  } else if (((msb >> 4) & 0xF) == 2) {
+  } else if (more_significant_nibble_of(msb) == 2) {
     // CALL - call subroutine
     cpu->stack[cpu->SP] = cpu->PC;
     cpu->SP += 1;
-    cpu->PC = ((msb & 0x0F) << 8) + (lsb & 0xFF);
+    cpu->PC = (less_significant_nibble_of(msb) << 8) + (lsb & 0xFF);
     // Since we increment at the end of tick, we decrement here.
     cpu->PC -= sizeof(instruction);    
-  } else if (((msb >> 4) & 0xF) == 3) {
+  } else if (more_significant_nibble_of(msb) == 3) {
     // SE - skip next instruction if equal
-    if (cpu->V[msb & 0xF] == lsb) {
+    if (cpu->V[less_significant_nibble_of(msb)] == lsb) {
       cpu->PC += sizeof(instruction);
     }
-  } else if (((msb >> 4) & 0xF) == 4) {
+  } else if (more_significant_nibble_of(msb) == 4) {
     // SNE - skip next instruction if not equal
-    if (cpu->V[msb & 0xF] != lsb) {
+    if (cpu->V[less_significant_nibble_of(msb)] != lsb) {
       cpu->PC += sizeof(instruction);
     }
-  } else if (((msb >> 4) & 0xF) == 5 && ((lsb & 0xF) == 0)) {
+  } else if (more_significant_nibble_of(msb) == 5 && (less_significant_nibble_of(lsb) == 0)) {
     // SE - skip next instruction if registers are equal
-    if (cpu->V[msb & 0xF] == cpu->V[(lsb >> 4) & 0xF])
+    if (cpu->V[less_significant_nibble_of(msb)] == cpu->V[more_significant_nibble_of(lsb)])
       cpu->PC += sizeof(instruction);
-  } else if (((msb >> 4) & 0xF) == 6) {
+  } else if (more_significant_nibble_of(msb) == 6) {
     // LD - load byte into register
-    cpu->V[msb & 0xF] = lsb;
-  } else if (((msb >> 4) & 0xF) == 7) {
+    cpu->V[less_significant_nibble_of(msb)] = lsb;
+  } else if (more_significant_nibble_of(msb) == 7) {
     // ADD - add byte into register
-    cpu->V[msb & 0xF] += lsb;
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 0)) {
+    cpu->V[less_significant_nibble_of(msb)] += lsb;
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 0)) {
     // LD - load register into other register
-    cpu->V[msb & 0xF] = cpu->V[(lsb >> 4) & 0xF];
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 1)) {
+    cpu->V[less_significant_nibble_of(msb)] = cpu->V[more_significant_nibble_of(lsb)];
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 1)) {
     // OR - bitwise or two registers into another register
-    cpu->V[msb & 0xF] = cpu->V[msb & 0xF] | cpu->V[(lsb >> 4) & 0xF];
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 2)) {
+    cpu->V[less_significant_nibble_of(msb)] = cpu->V[less_significant_nibble_of(msb)] | cpu->V[more_significant_nibble_of(lsb)];
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 2)) {
     // AND - bitwise and two registers into another register
-    cpu->V[msb & 0xF] = cpu->V[msb & 0xF] & cpu->V[(lsb >> 4) & 0xF];
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 3)) {
+    cpu->V[less_significant_nibble_of(msb)] = cpu->V[less_significant_nibble_of(msb)] & cpu->V[more_significant_nibble_of(lsb)];
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 3)) {
 
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 4)) {
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 4)) {
 
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 5)) {
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 5)) {
 
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 6)) {
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 6)) {
 
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 7)) {
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 7)) {
 
-  } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 0xE)) {
+  } else if (more_significant_nibble_of(msb) == 8 && (less_significant_nibble_of(lsb) == 0xE)) {
 
-  } else if (((msb >> 4) & 0xF) == 9 && ((lsb & 0xF) == 0)) {
+  } else if (more_significant_nibble_of(msb) == 9 && (less_significant_nibble_of(lsb) == 0)) {
     // SNE - skip next instruction if registers are not equal
-    if (cpu->V[msb & 0xF] != cpu->V[(lsb >> 4) & 0xF]) {
+    if (cpu->V[less_significant_nibble_of(msb)] != cpu->V[more_significant_nibble_of(lsb)]) {
       cpu->PC += sizeof(instruction);
     }
-  } else if (((msb >> 4) & 0xF) == 0xA) {
+  } else if (more_significant_nibble_of(msb) == 0xA) {
 
-  } else if (((msb >> 4) & 0xF) == 0xB) {
+  } else if (more_significant_nibble_of(msb) == 0xB) {
 
-  } else if (((msb >> 4) & 0xF) == 0xC) {
+  } else if (more_significant_nibble_of(msb) == 0xC) {
 
-  } else if (((msb >> 4) & 0xF) == 0xD) {
+  } else if (more_significant_nibble_of(msb) == 0xD) {
 
-  } else if (((msb >> 4) & 0xF) == 0xE && (lsb == 0x9E)) {
+  } else if (more_significant_nibble_of(msb) == 0xE && (lsb == 0x9E)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xE && (lsb == 0xA1)) {
+  } else if (more_significant_nibble_of(msb) == 0xE && (lsb == 0xA1)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x07)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x07)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x0A)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x0A)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x15)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x15)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x18)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x18)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x1E)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x1E)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x29)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x29)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x33)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x33)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x55)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x55)) {
 
-  } else if (((msb >> 4) & 0xF) == 0xF && (lsb == 0x65)) {
+  } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x65)) {
 
   } else {
     printf("Invalid opcode: %.2x%.2x\n", msb, lsb);

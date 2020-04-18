@@ -28,12 +28,14 @@ bool initialize_graphics(graphics* gpu) {
 
 void render_graphics(graphics* gpu) {
   //TODO remove
+  /*
   SDL_Surface* testImageSurface = SDL_LoadBMP("test_images/test.bmp");
   if (testImageSurface == NULL) {
     printf("Failed to load bitmap!\n");
     return;
   }
   SDL_BlitSurface(testImageSurface, NULL, gpu->gScreenSurface, NULL);
+  */
   SDL_UpdateWindowSurface(gpu->gWindow);
 }
 
