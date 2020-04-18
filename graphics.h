@@ -6,11 +6,14 @@ typedef struct graphics {
   SDL_Surface* gScreenSurface;
 } graphics;
 
-#define SCREEN_HEIGHT 300
-#define SCREEN_WIDTH 400
 
 #define CHIP8_WIDTH 64
 #define CHIP8_HEIGHT 32
+
+#define RESOLUTION_MULTIPLIER 10
+#define SCREEN_HEIGHT CHIP8_HEIGHT * RESOLUTION_MULTIPLIER
+#define SCREEN_WIDTH CHIP8_WIDTH * RESOLUTION_MULTIPLIER
+
 
 bool initialize_graphics(graphics* gpu) {
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
