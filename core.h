@@ -45,6 +45,7 @@ void tick(core* cpu, graphics* gpu) {
   printf("%.2x%.2x\n", msb, lsb);
   if (msb == 0x00 && lsb == 0xe0) {
     // CLS - clear screen
+    // TODO
   } else if (msb == 0x00 && lsb == 0xee) {
     // RET - return from a subroutine
     cpu->SP -= 1;
@@ -80,15 +81,20 @@ void tick(core* cpu, graphics* gpu) {
     if (cpu->V[msb & 0xF] == cpu->V[(lsb >> 4) & 0xF])
       cpu->PC += sizeof(instruction);
   } else if (((msb >> 4) & 0xF) == 6) {
-
+    // LD - load byte into register
+    cpu->V[msb & 0xF] = lsb;
   } else if (((msb >> 4) & 0xF) == 7) {
-
+    // ADD - add byte into register
+    cpu->V[msb & 0xF] += lsb;
   } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 0)) {
-
+    // LD - load register into other register
+    cpu->V[msb & 0xF] = cpu->V[(lsb >> 4) & 0xF];
   } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 1)) {
-
+    // OR - bitwise or two registers into another register
+    cpu->V[msb & 0xF] = cpu->V[msb & 0xF] | cpu->V[(lsb >> 4) & 0xF];
   } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 2)) {
-
+    // AND - bitwise and two registers into another register
+    cpu->V[msb & 0xF] = cpu->V[msb & 0xF] & cpu->V[(lsb >> 4) & 0xF];
   } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 3)) {
 
   } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 4)) {
@@ -102,7 +108,10 @@ void tick(core* cpu, graphics* gpu) {
   } else if (((msb >> 4) & 0xF) == 8 && ((lsb & 0xF) == 0xE)) {
 
   } else if (((msb >> 4) & 0xF) == 9 && ((lsb & 0xF) == 0)) {
-
+    // SNE - skip next instruction if registers are not equal
+    if (cpu->V[msb & 0xF] != cpu->V[(lsb >> 4) & 0xF]) {
+      cpu->PC += sizeof(instruction);
+    }
   } else if (((msb >> 4) & 0xF) == 0xA) {
 
   } else if (((msb >> 4) & 0xF) == 0xB) {
