@@ -2,7 +2,7 @@
 #include "graphics.h"
 
 ubyte* program_start_in_core(core* c) {
-  if (c == NULL) 
+  if (c == NULL)
     return NULL;
 
   return &(c->ram[PROGRAM_START_OFFSET]);
@@ -10,7 +10,7 @@ ubyte* program_start_in_core(core* c) {
 
 void initialize_core(core* cpu) {
   cpu->PC = PROGRAM_START_OFFSET;
-  
+
   sranddev();
   load_sprites_into_pointer(&(cpu->ram[HEX_SPRITE_START_OFFSET]));
 }
@@ -19,12 +19,12 @@ void tick(core* cpu, graphics* gpu) {
   instruction current_instruction = *(instruction *)(&(cpu->ram[cpu->PC]));
   ubyte lsb = (current_instruction >> 8) & 0xFF;
   ubyte msb = current_instruction & 0xFF;
-  
-  printf("%.2x%.2x\n", msb, lsb);
+
+  //printf("%.2x%.2x\n", msb, lsb);
   if (msb == 0x00 && lsb == 0xe0) {
     // CLS - clear screen
     clear_graphics(gpu);
-  } else if (msb == 0x00 && lsb == 0xee) {
+    } else if (msb == 0x00 && lsb == 0xee) {
     // RET - return from a subroutine
     cpu->SP -= 1;
     cpu->PC = cpu->stack[cpu->SP];
@@ -36,14 +36,14 @@ void tick(core* cpu, graphics* gpu) {
     // JP - jump to a routine
     cpu->PC = (less_significant_nibble_of(msb) << 8) + (lsb & 0xFF);
     // Since we increment at the end of tick, we decrement here.
-    cpu->PC -= sizeof(instruction);    
+    cpu->PC -= sizeof(instruction);
   } else if (more_significant_nibble_of(msb) == 2) {
     // CALL - call subroutine
     cpu->stack[cpu->SP] = cpu->PC;
     cpu->SP += 1;
     cpu->PC = (less_significant_nibble_of(msb) << 8) + (lsb & 0xFF);
     // Since we increment at the end of tick, we decrement here.
-    cpu->PC -= sizeof(instruction);    
+    cpu->PC -= sizeof(instruction);
   } else if (more_significant_nibble_of(msb) == 3) {
     // SE - skip next instruction if equal
     if (cpu->V[less_significant_nibble_of(msb)] == lsb) {
@@ -131,27 +131,35 @@ void tick(core* cpu, graphics* gpu) {
     cpu->PC = cpu->V[0] + (less_significant_nibble_of(msb) << 8) + (lsb & 0xFF);
     cpu->PC -= sizeof(instruction);
   } else if (more_significant_nibble_of(msb) == 0xC) {
+    // RND - set Vx = random byte & lsb
+    // Not the most equally distributed rand() but whatever.
     cpu->V[less_significant_nibble_of(msb)] = (reg)(rand() & lsb);
   } else if (more_significant_nibble_of(msb) == 0xD) {
-    
+    cpu->V[0xF] = place_sprite(cpu, gpu, less_significant_nibble_of(lsb), cpu->V[less_significant_nibble_of(msb)], cpu->V[more_significant_nibble_of(lsb)]);
   } else if (more_significant_nibble_of(msb) == 0xE && (lsb == 0x9E)) {
-
+    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xE && (lsb == 0xA1)) {
-
+    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x07)) {
-
+    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x0A)) {
-
+    // TODO if key-press, store value of key in Vx
+    // else, redo instruction: 
+    cpu->PC -= sizeof(instruction);
+    //printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x15)) {
-
+    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x18)) {
-
+    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x1E)) {
-
+    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x29)) {
-
+    cpu->I = HEX_SPRITE_START_OFFSET + (cpu->V[less_significant_nibble_of(msb)] * HEX_SPRITE_BYTES_ON_DISK);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x33)) {
-
+    uint16_t value = cpu->V[less_significant_nibble_of(msb)];
+    cpu->ram[cpu->I] = (value / 100) % 10;
+    cpu->ram[cpu->I + 1] = (value / 10) % 10;
+    cpu->ram[cpu->I + 2] = value % 10;
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x55)) {
     // LD - Load [I] from registers V0 - Vx
     memcpy(&(cpu->ram[cpu->I]), &(cpu->V[0]), less_significant_nibble_of(msb) + 1);
