@@ -3,7 +3,7 @@
 
 typedef struct graphics {
   SDL_Window* gWindow;
-  SDL_Surface* gScreenSurface;
+  SDL_Renderer* gRenderer;
 } graphics;
 
 
@@ -25,29 +25,50 @@ bool initialize_graphics(graphics* gpu) {
     return false;
   }
 
-  gpu->gScreenSurface = SDL_GetWindowSurface(gpu->gWindow);
+  if ((gpu->gRenderer = SDL_CreateRenderer(gpu->gWindow, -1, SDL_RENDERER_ACCELERATED)) == NULL) {
+    printf("SDL couldn't create a renderer in the window. error: %s\n", SDL_GetError());
+    return false;
+  }
+
+  if (!!SDL_RenderSetLogicalSize(gpu->gRenderer, CHIP8_WIDTH, CHIP8_HEIGHT)) {
+    printf("SDL couldn't set the CHIP-8 resolution in the renderer. error: %s\n", SDL_GetError());
+    return false;
+  }
+
+  if (!!SDL_SetRenderDrawColor(gpu->gRenderer, 255, 255, 255, 255)) {
+    printf("SDL couldn't initialize the renderer's default color to white. error: %s\n", SDL_GetError());
+    return false;
+  }
+  SDL_RenderClear(gpu->gRenderer);
   return true;
 }
 
+void clear_graphics(graphics* gpu) {
+  SDL_SetRenderDrawColor(gpu->gRenderer, 255, 255, 255, 255);
+  SDL_RenderClear(gpu->gRenderer);
+}
+
 void render_graphics(graphics* gpu) {
-  //TODO remove
-  /*
-  SDL_Surface* testImageSurface = SDL_LoadBMP("test_images/test.bmp");
-  if (testImageSurface == NULL) {
-    printf("Failed to load bitmap!\n");
-    return;
-  }
-  SDL_BlitSurface(testImageSurface, NULL, gpu->gScreenSurface, NULL);
-  */
-  SDL_UpdateWindowSurface(gpu->gWindow);
+  SDL_Rect r;
+  r.x = 5;
+  r.y = 5;
+  r.w = 5;
+  r.h = 5;
+  SDL_SetRenderDrawColor(gpu->gRenderer, 255, 0, 0, 255);
+  SDL_RenderFillRect(gpu->gRenderer, &r);
+  SDL_RenderPresent(gpu->gRenderer);
 }
 
 void destroy_graphics(graphics* gpu) {
-  SDL_FreeSurface(gpu->gScreenSurface);
-  gpu->gScreenSurface = NULL;
+  if (gpu->gRenderer != NULL) {
+    SDL_DestroyRenderer(gpu->gRenderer);
+    gpu->gRenderer = NULL;
+  }
 
-  SDL_DestroyWindow(gpu->gWindow);
-  gpu->gWindow = NULL;
+  if (gpu->gWindow != NULL) {
+    SDL_DestroyWindow(gpu->gWindow);
+    gpu->gWindow = NULL;
+  }
 
   SDL_Quit();
 }

@@ -49,7 +49,7 @@ void tick(core* cpu, graphics* gpu) {
   printf("%.2x%.2x\n", msb, lsb);
   if (msb == 0x00 && lsb == 0xe0) {
     // CLS - clear screen
-    // TODO
+    clear_graphics(gpu);
   } else if (msb == 0x00 && lsb == 0xee) {
     // RET - return from a subroutine
     cpu->SP -= 1;
