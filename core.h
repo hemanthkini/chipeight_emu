@@ -35,8 +35,6 @@ ubyte* program_start_in_core(core* c) {
 
 void initialize_core(core* cpu) {
   cpu->PC = PROGRAM_START_OFFSET;
-  cpu->ram[512] = 0x00;
-  cpu->ram[513] = 0xE0;
 }
 
 void tick(core* cpu, graphics* gpu) {
@@ -44,7 +42,7 @@ void tick(core* cpu, graphics* gpu) {
   ubyte lsb = (current_instruction >> 8) & 0xFF;
   ubyte msb = current_instruction & 0xFF;
   
-  //printf("%.2x%.2x\n", msb, lsb);
+  printf("%.2x%.2x\n", msb, lsb);
   if (msb == 0x00 && lsb == 0xe0) {
     // CLS - clear screen
   } else if (msb == 0x00 && lsb == 0xee) {
