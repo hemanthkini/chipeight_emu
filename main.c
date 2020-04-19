@@ -30,8 +30,10 @@ int main() {
   initialize_core(cpu);
   printf("\"CPU\" initialized.\n");
 
-  size_t bytes_loaded = load_rom(cpu, "./roms/Random Number Test [Matthew Mikolay, 2010].ch8");
-  printf("%lu bytes loaded from rom file.\n", bytes_loaded);
+  // TODO prompt for ROM
+  char* rom_path = "./roms/Random Number Test [Matthew Mikolay, 2010].ch8";
+  size_t bytes_loaded = load_rom(cpu, rom_path);
+  printf("%lu bytes loaded from rom file: %s\n", bytes_loaded, rom_path);
 
   graphics* gpu = calloc(1, sizeof(graphics));
   if (!initialize_graphics(gpu)) {
