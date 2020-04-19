@@ -30,6 +30,8 @@ typedef struct core {
   ireg PC; // currently holding address (program counter)
   ireg stack[STACK_LENGTH];
   reg SP; // stack pointer - points to the topmost level of the stack
+  uint32_t last_delay_ticks;
+  uint32_t last_sound_ticks;
 } core;
 
 #define NUM_KEYS 16

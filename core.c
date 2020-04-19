@@ -15,10 +15,28 @@ void initialize_core(core* cpu) {
   load_sprites_into_pointer(&(cpu->ram[HEX_SPRITE_START_OFFSET]));
 }
 
+void handle_timer(core* cpu) {
+  uint32_t curr_ticks = SDL_GetTicks();
+  if (cpu->DT > 0) {
+    if ((curr_ticks - cpu->last_delay_ticks) > TIMER_TICK_IN_MS) {
+      cpu->DT--;
+      cpu->last_delay_ticks = curr_ticks;
+    }
+  }
+  if (cpu->ST > 0) {
+    if ((curr_ticks - cpu->last_sound_ticks) > TIMER_TICK_IN_MS) {
+      cpu->ST--;
+      cpu->last_sound_ticks = curr_ticks;
+    }
+  }
+}
+
 void tick(core* cpu, graphics* gpu, input* keyboard) {
   instruction current_instruction = *(instruction *)(&(cpu->ram[cpu->PC]));
   ubyte lsb = (current_instruction >> 8) & 0xFF;
   ubyte msb = current_instruction & 0xFF;
+
+  handle_timer(cpu);
 
   //printf("%.2x%.2x\n", msb, lsb);
   if (msb == 0x00 && lsb == 0xe0) {
@@ -139,29 +157,32 @@ void tick(core* cpu, graphics* gpu, input* keyboard) {
   } else if (more_significant_nibble_of(msb) == 0xE && (lsb == 0x9E)) {
     // SKP - skip instruction if key with value of Vx is pressed
     if (keyboard->key_down[cpu->V[less_significant_nibble_of(msb)]]) {
-      cpu->PC += sizeof(instruction); 
+      cpu->PC += sizeof(instruction);
     }
   } else if (more_significant_nibble_of(msb) == 0xE && (lsb == 0xA1)) {
     // SKNP - skip instruction if key with value of Vx is not pressed
     if (!keyboard->key_down[cpu->V[less_significant_nibble_of(msb)]]) {
-      cpu->PC += sizeof(instruction); 
+      cpu->PC += sizeof(instruction);
     }
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x07)) {
-    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
+    // LD - Load Vx from DT
+    cpu->V[less_significant_nibble_of(msb)] = cpu->DT;
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x0A)) {
     // LD - if key-press, store value of key in Vx
     if (keyboard->num_keys_pressed > 0) {
       cpu->V[less_significant_nibble_of(msb)] = keyboard->last_key_pressed_index;
     } else {
-      // else, redo instruction: 
+      // else, redo instruction:
       cpu->PC -= sizeof(instruction);
     }
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x15)) {
-    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
+    cpu->DT = cpu->V[less_significant_nibble_of(msb)];
+    cpu->last_delay_ticks = SDL_GetTicks();
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x18)) {
-    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
+    cpu->ST = cpu->V[less_significant_nibble_of(msb)];
+    cpu->last_sound_ticks = SDL_GetTicks();
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x1E)) {
-    // ADD - Add Vx to I 
+    // ADD - Add Vx to I
     cpu->I = cpu->I + (uint16_t)cpu->V[less_significant_nibble_of(msb)];
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x29)) {
     // LD - Load sprite locaation for Vx into I

@@ -34,7 +34,7 @@ int main() {
   printf("\"CPU\" initialized.\n");
 
   // TODO prompt for ROM
-  char* rom_path = "./roms/Random Number Test [Matthew Mikolay, 2010].ch8";
+  char* rom_path = "./roms/Pong (1 player).ch8";
   size_t bytes_loaded = load_rom(cpu, rom_path);
   printf("%lu bytes loaded from rom file: %s\n", bytes_loaded, rom_path);
 
