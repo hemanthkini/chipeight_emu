@@ -32,5 +32,12 @@ typedef struct core {
   reg SP; // stack pointer - points to the topmost level of the stack
 } core;
 
+#define NUM_KEYS 16
+
+typedef struct input {
+  uint8_t key_down[NUM_KEYS];
+  uint8_t num_keys_pressed;
+  uint8_t last_key_pressed_index;
+} input;
 
 #endif

@@ -15,7 +15,7 @@ void initialize_core(core* cpu) {
   load_sprites_into_pointer(&(cpu->ram[HEX_SPRITE_START_OFFSET]));
 }
 
-void tick(core* cpu, graphics* gpu) {
+void tick(core* cpu, graphics* gpu, input* keyboard) {
   instruction current_instruction = *(instruction *)(&(cpu->ram[cpu->PC]));
   ubyte lsb = (current_instruction >> 8) & 0xFF;
   ubyte msb = current_instruction & 0xFF;
@@ -137,25 +137,37 @@ void tick(core* cpu, graphics* gpu) {
   } else if (more_significant_nibble_of(msb) == 0xD) {
     cpu->V[0xF] = place_sprite(cpu, gpu, less_significant_nibble_of(lsb), cpu->V[less_significant_nibble_of(msb)], cpu->V[more_significant_nibble_of(lsb)]);
   } else if (more_significant_nibble_of(msb) == 0xE && (lsb == 0x9E)) {
-    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
+    // SKP - skip instruction if key with value of Vx is pressed
+    if (keyboard->key_down[cpu->V[less_significant_nibble_of(msb)]]) {
+      cpu->PC += sizeof(instruction); 
+    }
   } else if (more_significant_nibble_of(msb) == 0xE && (lsb == 0xA1)) {
-    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
+    // SKNP - skip instruction if key with value of Vx is not pressed
+    if (!keyboard->key_down[cpu->V[less_significant_nibble_of(msb)]]) {
+      cpu->PC += sizeof(instruction); 
+    }
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x07)) {
     printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x0A)) {
-    // TODO if key-press, store value of key in Vx
-    // else, redo instruction: 
-    cpu->PC -= sizeof(instruction);
-    //printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
+    // LD - if key-press, store value of key in Vx
+    if (keyboard->num_keys_pressed > 0) {
+      cpu->V[less_significant_nibble_of(msb)] = keyboard->last_key_pressed_index;
+    } else {
+      // else, redo instruction: 
+      cpu->PC -= sizeof(instruction);
+    }
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x15)) {
     printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x18)) {
     printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x1E)) {
-    printf("Unimplemented opcode: %.2x%.2x\n", msb, lsb);
+    // ADD - Add Vx to I 
+    cpu->I = cpu->I + (uint16_t)cpu->V[less_significant_nibble_of(msb)];
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x29)) {
+    // LD - Load sprite locaation for Vx into I
     cpu->I = HEX_SPRITE_START_OFFSET + (cpu->V[less_significant_nibble_of(msb)] * HEX_SPRITE_BYTES_ON_DISK);
   } else if (more_significant_nibble_of(msb) == 0xF && (lsb == 0x33)) {
+    // LD B, Vx - store decimal representation of Vx in I (100s place), I+1 (10s place), and I+2 (1s place)
     uint16_t value = cpu->V[less_significant_nibble_of(msb)];
     cpu->ram[cpu->I] = (value / 100) % 10;
     cpu->ram[cpu->I + 1] = (value / 10) % 10;

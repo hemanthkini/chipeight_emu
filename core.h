@@ -19,6 +19,6 @@
 
 ubyte* program_start_in_core(core* c);
 void initialize_core(core* cpu);
-void tick(core* cpu, graphics* gpu);
+void tick(core* cpu, graphics* gpu, input* keyboard);
 
 #endif

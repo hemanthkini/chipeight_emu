@@ -4,7 +4,10 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
+#include "structures.h"
 #include "core.h"
+#include "graphics.h"
+#include "input.h"
 
 int load_rom(core* cpu, char* rom_path) {
   FILE *rom_file = fopen(rom_path, "rb");
@@ -43,6 +46,10 @@ int main() {
   }
   printf("\"GPU\" initialized.\n");
 
+  // TODO prompt keyboard layout
+  input* keyboard = calloc(1, sizeof(input));
+  printf("Keyboard initialized.\n");
+
   bool quit = false;
   SDL_Event e;
 
@@ -53,10 +60,13 @@ int main() {
 	quit = true;
       }
       // Handle keypress events here.
+      if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
+	process_input(keyboard, e);
+      }
     }
 
     // Update core and gpu here.
-    tick(cpu, gpu);
+    tick(cpu, gpu, keyboard);
     render_graphics(gpu);
   }
 
