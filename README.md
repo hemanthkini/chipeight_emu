@@ -2,4 +2,5 @@
 
 A CHIP-8 emulator. Written for OS X.
 
-Before compiling, put the SDL2 framework into /Library/Frameworks/.
+Before compiling, install SDL2 with Homebrew:
+  * $ brew install SDL2
